@@ -1,0 +1,12 @@
+Package: CommT
+Type: Package
+Title: Evaluations of the community tree
+Version: 0.1
+Date: 2015-05-20
+Author: Michael Gruenstaeudl
+Maintainer: Michael Gruenstaeudl <gruenstaeudl.1@osu.edu>
+Depends: R (>= 3.0.0)
+Imports: ape (>= 3.1-4), ggplot2 (>= 1.0.0), gridExtra, P2C2M (>= 0.7.6), phangorn, reshape
+Description: Evaluations of the community tree.
+License: GPL (>= 2)
+OS_type: unix
