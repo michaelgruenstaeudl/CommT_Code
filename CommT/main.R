@@ -2,15 +2,17 @@
 #author = "Michael Gruenstaeudl, PhD"
 #copyright = "Copyright (C) 2014-2015 Michael Gruenstaeudl"
 #contributors = c("Michael Gruenstaeudl")
-#email = "gruenstaeudl.1@osu.edu"
-#version = "2015.03.10.1600"
+#email = "mi.gruenstaeudl@gmail.com"
+#version = "2015.06.16.1700"
 
-CommT.plotcolors <- function (n=6, h=c(0,360)+15) {
+
+CommT.plotcolors = function (n=6, h=c(0,360)+15) {
     if ((diff(h)%%360) < 1) {
         h[2] = h[2]-360/n
     }
     hcl(h = (seq(h[1], h[2], length=n)), c=100, l=65)
 }
+
 
 CommT.kfdist = function (post_gt_distrs_BEAST,
                          post_gt_distrs_starBEAST,
@@ -82,28 +84,58 @@ CommT.anova = function (in_df) {
     out_m = t(as.data.frame(out_list))
     out_m = round(out_m, digits=4)
     colnames(out_m) = "Pr(>F)"
-    
+
     return(out_m)
 }
 
 
-CommT.viz = function (in_df, in_legend, title_str="plot_noname", alpha=0.05, annot_x_pos, annot_y_post, xlim_thres) {
+CommT.legendpos = function (in_data) {
+  # Descr:  generate location coordinates for legend
+  # I/p:    in_data
+  # O/p:    a list
+  
+    annot_x_list = annot_y_list = xlim_thres_list = c()
+    for (i in split(in_data, in_data$gene_id)) {
+        xlim_thres_list = c(annot_x_list, quantile(i[,"KF_dist"], probs = c(0.9999)))
+        annot_y_list = c(annot_y_list, max(table(cut(i[,"KF_dist"], breaks=100))))
+    }
+    xlim_thres_pos = quantile(xlim_thres_list, probs = c(0.95))
+    annot_x_pos = quantile(xlim_thres_list, probs = c(0.80))[[1]]
+    annot_y_pos = max(annot_y_list)
+    
+    out_l = list("xlim_thres_pos"=xlim_thres_pos, "annot_x_pos"=annot_x_pos, "annot_y_pos"=annot_y_pos)
+
+    return(out_l)
+}
+
+
+CommT.viz = function (in_df, title_str="a_project_name_here", alpha=0.05, legend_text, legend_pos) {
   # Descr:  visualize the tree distances
   # Deps:   ggplot2::ggplot
   # I/p:    in_df = input dataframe
-  #         in_legend = input legend
   #         title_str = string with title name
   #         alpha = significance level
+  #         legend_text = input legend
+  #         legend_pos = legend position
   # O/p:    a plot
+
+  # 0. Parse legend position information
+    annot_x_pos = legend_pos$annot_x_pos
+    annot_y_pos = legend_pos$annot_y_pos
+    xlim_thres = legend_pos$xlim_thres_pos
 
   # 1. Define colors
     color_specs = CommT.plotcolors(n=2)
 
   # 2. Assess significance
     in_df[,ncol(in_df)+1] = "insign"
-    label_sign = paste("gene", sprintf("%03d", which(in_legend < alpha)), sep="")
+    label_sign = paste("gene", sprintf("%03d", which(legend_text < alpha)), sep="")
     in_df[which(in_df[,2]==label_sign),ncol(in_df)] = "signif"
     colnames(in_df)[ncol(in_df)] = "significance"
+
+  # Special to avoid error 'no visible binding for global variable' during compilation
+  # For details, see: http://stackoverflow.com/questions/9439256/how-can-i-handle-r-cmd-check-no-visible-binding-for-global-variable-notes-when
+    KF_dist = gene_id = significance = NULL
 
   # 3. Generate plot
     plot_handle = ggplot2::ggplot(data=in_df) +
@@ -118,14 +150,14 @@ CommT.viz = function (in_df, in_legend, title_str="plot_noname", alpha=0.05, ann
 
   # 4. Add annotations
   #    Note: x-position easy to define, because KF distances between 0 and 1
-    n_entries = length(in_legend)
-    plot_handle = plot_handle + annotate("text", x=annot_x_pos, y=annot_y_pos, label=paste("gene", colnames(in_legend), sep="     "), color=color_specs[2], fontface="bold")
+    n_entries = length(legend_text)
+    plot_handle = plot_handle + annotate("text", x=annot_x_pos, y=annot_y_pos, label=paste("gene", colnames(legend_text), sep="     "), color=color_specs[2], fontface="bold")
     for (i in 1:n_entries) {
-        if (in_legend[i] < alpha) {
-            plot_handle = plot_handle + annotate("text", x=annot_x_pos, y=annot_y_pos-(annot_y_pos*i/n_entries), label=paste(rownames(in_legend)[i], sprintf("%03f", in_legend[i]), sep="   "), color=color_specs[1])
+        if (legend_text[i] < alpha) {
+            plot_handle = plot_handle + annotate("text", x=annot_x_pos, y=annot_y_pos-(annot_y_pos*i/n_entries), label=paste(rownames(legend_text)[i], sprintf("%03f", legend_text[i]), sep="   "), color=color_specs[1], size=4)
         }
-        if (in_legend[i] >= alpha) {
-            plot_handle = plot_handle + annotate("text", x=annot_x_pos, y=annot_y_pos-(annot_y_pos*i/n_entries), label=paste(rownames(in_legend)[i], sprintf("%03f", in_legend[i]), sep="   "), color=color_specs[2])
+        if (legend_text[i] >= alpha) {
+            plot_handle = plot_handle + annotate("text", x=annot_x_pos, y=annot_y_pos-(annot_y_pos*i/n_entries), label=paste(rownames(legend_text)[i], sprintf("%03f", legend_text[i]), sep="   "), color=color_specs[2], size=4)
         }
     }
   # 3. Return plot

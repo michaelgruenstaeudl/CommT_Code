@@ -8,11 +8,12 @@ import(phangorn)
 import(reshape)
 
 # Exporting self functions
-export(CommT.kfdist)
 export(CommT.anova)
+export(CommT.kfdist)
+export(CommT.legendpos)
 export(CommT.viz)
 
 # Exporting other functions
-export(dist.nodes)
-export(is.binary.tree)
-export(unroot)
+#export(dist.nodes)
+#export(is.binary.tree)
+#export(unroot)
