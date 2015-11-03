@@ -1,8 +1,8 @@
 Package: CommT
 Type: Package
-Title: Comparative phylogeographic analysis using the community tree framework
-Version: 0.1
-Date: 2015-06-16
+Title: Comparative Phylogeographic Analysis using the Community Tree Framework
+Version: 0.1.3
+Date: 2015-11-03
 Author: Michael Gruenstaeudl, PhD
 Maintainer: Michael Gruenstaeudl <mi.gruenstaeudl@gmail.com>
 Depends: R (>= 3.0.0)

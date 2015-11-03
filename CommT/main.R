@@ -3,7 +3,7 @@
 #copyright = "Copyright (C) 2014-2015 Michael Gruenstaeudl"
 #contributors = c("Michael Gruenstaeudl")
 #email = "mi.gruenstaeudl@gmail.com"
-#version = "2015.06.16.1700"
+#version = "2015.11.03.1700"
 
 
 CommT.plotcolors = function (n=6, h=c(0,360)+15) {
@@ -36,7 +36,7 @@ CommT.kfdist = function (post_gt_distrs_BEAST,
                        NA)
   # 3. Calculate tree distance for each tree pair
         for (h in 1:n_genes) {
-            cat("\n\nANALYZING LOCUS '", names(post_gt_distrs_BEAST)[h], "'\n", sep="")
+            cat("\n\nAnalyzing locus ", h, sep="")
             cat("\nComparing tree pair:\n ")
             for (i in 1:length(post_gt_distrs_BEAST[[h]])) {
                 cat(i, " ", sep="")
@@ -60,7 +60,7 @@ CommT.kfdist = function (post_gt_distrs_BEAST,
     outlier_id = paste("gene", sprintf("%03d", as.integer(outlier_num)), sep="")
     out_df[which(out_df[,2]==outlier_id),4] = "outlier"
     colnames(out_df) = c('post_gen', 'gene_id', 'KF_dist', 'grouping_var')
-    
+
   # 7. Return out_df
     return(out_df)
 }
@@ -94,22 +94,21 @@ CommT.legendpos = function (in_data) {
   # I/p:    in_data
   # O/p:    a list
   
-    annot_x_list = annot_y_list = xlim_thres_list = c()
+    annot_x_list = annot_y_list = c()
     for (i in split(in_data, in_data$gene_id)) {
-        xlim_thres_list = c(annot_x_list, quantile(i[,"KF_dist"], probs = c(0.9999)))
+        annot_x_list = c(annot_x_list, quantile(i[,"KF_dist"], probs = c(0.9999)))
         annot_y_list = c(annot_y_list, max(table(cut(i[,"KF_dist"], breaks=100))))
     }
-    xlim_thres_pos = quantile(xlim_thres_list, probs = c(0.95))
-    annot_x_pos = quantile(xlim_thres_list, probs = c(0.80))[[1]]
-    annot_y_pos = max(annot_y_list)
-    
-    out_l = list("xlim_thres_pos"=xlim_thres_pos, "annot_x_pos"=annot_x_pos, "annot_y_pos"=annot_y_pos)
+    xlim_thres_pos = quantile(annot_x_list, probs = c(0.95))
+    ylim_thres_pos = quantile(annot_y_list, probs = c(0.35))
+
+    out_l = list("xlim_thres_pos"=xlim_thres_pos, "ylim_thres_pos"=ylim_thres_pos)
 
     return(out_l)
 }
 
 
-CommT.viz = function (in_df, title_str="a_project_name_here", alpha=0.05, legend_text, legend_pos) {
+CommT.viz = function (in_df, title_str="a_project_name_here", alpha, legend_text, legend_pos) {
   # Descr:  visualize the tree distances
   # Deps:   ggplot2::ggplot
   # I/p:    in_df = input dataframe
@@ -120,17 +119,18 @@ CommT.viz = function (in_df, title_str="a_project_name_here", alpha=0.05, legend
   # O/p:    a plot
 
   # 0. Parse legend position information
-    annot_x_pos = legend_pos$annot_x_pos
-    annot_y_pos = legend_pos$annot_y_pos
     xlim_thres = legend_pos$xlim_thres_pos
+    ylim_thres = legend_pos$ylim_thres_pos
 
   # 1. Define colors
     color_specs = CommT.plotcolors(n=2)
 
   # 2. Assess significance
     in_df[,ncol(in_df)+1] = "insign"
-    label_sign = paste("gene", sprintf("%03d", which(legend_text < alpha)), sep="")
-    in_df[which(in_df[,2]==label_sign),ncol(in_df)] = "signif"
+    labels_signif = paste("gene", sprintf("%03d", which(legend_text < alpha)), sep="")
+    for (l in labels_signif) {
+        in_df[which(in_df[,"gene_id"]==l),ncol(in_df)] = "signif"
+    }
     colnames(in_df)[ncol(in_df)] = "significance"
 
   # Special to avoid error 'no visible binding for global variable' during compilation
@@ -140,26 +140,39 @@ CommT.viz = function (in_df, title_str="a_project_name_here", alpha=0.05, legend
   # 3. Generate plot
     plot_handle = ggplot2::ggplot(data=in_df) +
     geom_density(aes(x=KF_dist, group=gene_id, color=factor(significance), line=2)) +
-    xlim(0, xlim_thres) +
-    #ylim(0, 25) +
+    #xlim(0, xlim_thres) +
+    xlim(0, 1) +
+    ylim(0, ylim_thres) +
     theme_bw() +
     scale_colour_manual(name="significance", values=rev(color_specs)) +
-    ggtitle(paste(title_str, ", alpha=", alpha, "\n", sep="")) +
+    #ggtitle(paste(title_str, ", alpha=", alpha, "\n", sep="")) +
+    ggtitle(paste(title_str, sep="")) +
     theme(legend.position = "none",
-          plot.title = element_text(size = rel(1.5)))
+          plot.title = element_text(size = rel(1.5)),
+          axis.text = element_text(size = rel(1.2)),
+          axis.title = element_text(size = rel(1.2)))
 
-  # 4. Add annotations
-  #    Note: x-position easy to define, because KF distances between 0 and 1
-    n_entries = length(legend_text)
-    plot_handle = plot_handle + annotate("text", x=annot_x_pos, y=annot_y_pos, label=paste("gene", colnames(legend_text), sep="     "), color=color_specs[2], fontface="bold")
-    for (i in 1:n_entries) {
-        if (legend_text[i] < alpha) {
-            plot_handle = plot_handle + annotate("text", x=annot_x_pos, y=annot_y_pos-(annot_y_pos*i/n_entries), label=paste(rownames(legend_text)[i], sprintf("%03f", legend_text[i]), sep="   "), color=color_specs[1], size=4)
-        }
-        if (legend_text[i] >= alpha) {
-            plot_handle = plot_handle + annotate("text", x=annot_x_pos, y=annot_y_pos-(annot_y_pos*i/n_entries), label=paste(rownames(legend_text)[i], sprintf("%03f", legend_text[i]), sep="   "), color=color_specs[2], size=4)
-        }
-    }
+  # 4. Add annotation grob
+    plot_handle = plot_handle + annotation_custom(grob = tableGrob(legend_text),
+                                                  xmin = 0.95,
+                                                  xmax = 0.80,
+                                                  ymin = ylim_thres*0.60,
+                                                  ymax = ylim_thres)
+
+# LEGACYCODE:
+# #    Note: x-position easy to define, because KF distances between 0 and 1
+#    n_entries = length(legend_text)
+#    plot_handle = plot_handle + annotate("text", x=annot_x_pos, y=annot_y_pos, label=paste("gene", colnames(legend_text), sep="     "), color=color_specs[2], fontface="bold")
+#    plot_handle = plot_handle + annotate("text", x=annot_x_pos, y=annot_y_pos, label=paste("gene", colnames(legend_text), sep="     "), color=color_specs[2], fontface="bold")
+#    for (i in 1:n_entries) {
+#        if (legend_text[i] < alpha) {
+#            plot_handle = plot_handle + annotate("text", x=annot_x_pos, y=annot_y_pos-(annot_y_pos*i/n_entries), label=paste(rownames(legend_text)[i], sprintf("%03f", legend_text[i]), sep="   "), color=color_specs[1], size=4)
+#        }
+#        if (legend_text[i] >= alpha) {
+#            plot_handle = plot_handle + annotate("text", x=annot_x_pos, y=annot_y_pos-(annot_y_pos*i/n_entries), label=paste(rownames(legend_text)[i], sprintf("%03f", legend_text[i]), sep="   "), color=color_specs[2], size=4)
+#        }
+#    }
+
   # 3. Return plot
     return(plot_handle)
 }

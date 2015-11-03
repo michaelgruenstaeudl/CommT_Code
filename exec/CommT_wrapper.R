@@ -11,9 +11,11 @@
     for (s in n_sims) {
         cat(paste("\n", "Analyzing simulation", s, "\n"))
 
+      # Keywords: noswap, g1swap, g1a2swap, g1t4swap, gAllShuf
+
       # Specify input file names (User input necessary)
-        BEAST_prefix = paste("/run/media/michael/6974AEDF6DB4DD0C/05_Project_CommT_Jan2015/03_KFdist_distributions/01_input/05_gAllShuf/BEAST/CommT.Jan2015.gAllShuf.sim.", s, ".gene", sep="")
-        starBEAST_prefix = paste("/run/media/michael/6974AEDF6DB4DD0C/05_Project_CommT_Jan2015/03_KFdist_distributions/01_input/05_gAllShuf/starBEAST/CommT.Jan2015.gAllShuf.sim.", s, ".gene", sep="")
+        BEAST_prefix = paste("/home/michael_science/Desktop/CommT_Project/Revision_SupplFigure1/05_Project_CommT_Jan2015/03_KFdist_distributions/01_input/01_starBEAST_geneTrees/CommT.Jan2015.g1t4swap.sim.", s, ".gene", sep="")
+        starBEAST_prefix = paste("/home/michael_science/Desktop/CommT_Project/Revision_SupplFigure1/05_Project_CommT_Jan2015/03_KFdist_distributions/01_input/02_BEAST_GeneTrees/CommT.Jan2015.g1t4swap.sim.", s, ".gene", sep="")
 
       # Load data
         post_gt_distrs_BEAST = list()
@@ -25,10 +27,6 @@
         }
 
       # Calculate KF distances
-        #in_data = CommT.kfdist(post_gt_distrs_BEAST, post_gt_distrs_starBEAST, outlier_num=c())
-        #in_data = CommT.kfdist(post_gt_distrs_BEAST, post_gt_distrs_starBEAST, outlier_num=1)
-        #in_data = CommT.kfdist(post_gt_distrs_BEAST, post_gt_distrs_starBEAST, outlier_num=c(1,2))
-        #in_data = CommT.kfdist(post_gt_distrs_BEAST, post_gt_distrs_starBEAST, outlier_num=c(1,2,3,4))
         in_data = CommT.kfdist(post_gt_distrs_BEAST, post_gt_distrs_starBEAST, outlier_num=c())
 
       # Generate ANOVA legend
@@ -38,7 +36,8 @@
         legend_pos = CommT.legendpos(in_data)
 
       # Visualize KF distances
-        my_plot = CommT.viz(in_data, "a_project_name_here", alpha=0.05, legend_text, legend_pos$annot_x_pos, legend_pos$annot_y_pos, legend_pos$xlim_thres_pos)
+        #my_plot = CommT.viz(in_data, "a_project_name_here", alpha=0.05, legend_text, legend_pos)
+        my_plot = CommT.viz(in_data, paste("sim.", s, sep=""), alpha=0.05, legend_text, legend_pos)
 
       # Save plot
         assign(paste("sim.", s, sep=""), my_plot)
@@ -46,10 +45,11 @@
     }
 
     # Specify output file names (User input necessary)
-    svg("/run/media/michael/6974AEDF6DB4DD0C/05_Project_CommT_Jan2015/03_KFdist_distributions/02_visualizations_with_Rpackage/05_BEAST.to.starBEAST_KFdist_gAllShuf.svg", width=30, height=20)
+    svg("/home/michael_science/Desktop/CommT_Project/Revision_SupplFigure1/05_Project_CommT_Jan2015/03_KFdist_distributions/03_original_visualizations_with_Rpackage/05_BEAST.to.starBEAST_KFdist_g1t4swap.svg", width=30, height=26)
 
     grid.arrange(sim.01, sim.02, sim.03, sim.04, sim.05,
                  sim.06, sim.07, sim.08, sim.09, sim.10,
                  sim.11, sim.12, sim.13, sim.14, sim.15,
                  sim.16, sim.17, sim.18, sim.19, sim.20, ncol=5)
+
     dev.off()
